@@ -163,6 +163,10 @@ export default function Notes() {
         );
     };
 
+    const handleAIAssistant = () => {
+        router.push("/ai-assistant");
+    };
+
     const scrollViewContent = () => {
         switch (searchMode) {
             case SearchMode.Text:
@@ -193,6 +197,9 @@ export default function Notes() {
                     style={styles.imageButton}
                 >
                     <FontAwesome6 name={searchMode === SearchMode.Image ? "xmark" : "image"} size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
+                <TouchableOpacity onPress={handleAIAssistant} style={styles.imageButton}>
+                    <FontAwesome6 name="wand-magic-sparkles" size={20} color={colors.textSecondary} />
                 </TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={styles.scrollView}>

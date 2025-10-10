@@ -10,6 +10,7 @@ export default function RootLayout() {
         <Stack>
           <Stack.Screen name="index" options={{ title: "Notes" }} />
           <Stack.Screen name="note/[id]" options={{ title: "Note Editor" }} />
+          <Stack.Screen name="ai-assistant" options={{ title: "AI Assistant", presentation: "modal" }} />
         </Stack>
       </KeyboardProvider>
     </SafeAreaProvider>
