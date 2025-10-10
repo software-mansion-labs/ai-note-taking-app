@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { ActivityIndicator } from "react-native";
 import { textVectorStore } from "@/services/vectorStores/textVectorStore";
+import { imageVectorStore } from "@/services/vectorStores/imageVectorStore";
 import Notes from "./notes";
 
 export default function Index() {
@@ -10,6 +11,7 @@ export default function Index() {
     (async () => {
       try {
         await textVectorStore.load();
+        await imageVectorStore.load();
         setIsLoaded(true);
       } catch (e) {
         console.error('Vector stores failed to load', e);

@@ -8,6 +8,7 @@ import {
     updateNote as storageUpdateNote,
 } from "@/services/storage/notes";
 import { textSplitter, noteToString, textVectorStore } from "@/services/vectorStores/textVectorStore";
+import { imageEmbeddings, imageVectorStore } from "@/services/vectorStores/imageVectorStore";
 
 async function addImageToNote(noteId: string, sourceUri: string): Promise<string> {
     const fileName = sourceUri.split("/").pop() ?? "";
@@ -42,10 +43,16 @@ async function updateNote(noteId: string, data: { title: string; content: string
     await storageUpdateNote(noteId, data);
 
     await textVectorStore.delete({ predicate: r => r.metadata?.noteId === noteId });
+    await imageVectorStore.delete({ predicate: r => r.metadata?.noteId === noteId });
 
     const chunks = await textSplitter.splitText(noteToString(data));
     for (const chunk of chunks) {
         await textVectorStore.add({ document: chunk, metadata: { noteId } });
+    }
+
+    for (const uri of data.imageUris) {
+        const embedding = Array.from(await imageEmbeddings.forward(uri));
+        await imageVectorStore.add({ embedding, metadata: { imageUri: uri, noteId } });
     }
 }
 
@@ -53,6 +60,7 @@ async function deleteNote(noteId: string): Promise<void> {
     await FileSystem.deleteAsync(FileSystem.documentDirectory + `notes/${noteId}`, { idempotent: true });
     await storageDeleteNote(noteId);
     await textVectorStore.delete({ predicate: r => r.metadata?.noteId === noteId });
+    await imageVectorStore.delete({ predicate: r => r.metadata?.noteId === noteId });
 }
 
 async function searchByText(query: string, notes: Note[], n: number = 3): Promise<Note[]> {
@@ -61,12 +69,13 @@ async function searchByText(query: string, notes: Note[], n: number = 3): Promis
 }
 
 async function searchByImageUri(imageUri: string, notes: Note[], n: number = 3): Promise<Note[]> {
-    const results: { similarity: number }[] = [];
+    const imageEmbedding = Array.from(await imageEmbeddings.forward(imageUri));
+    const results = await imageVectorStore.query({ queryEmbedding: imageEmbedding });
     return buildSimilarityResults(results, notes).slice(0, n);
 }
 
 async function searchImagesByText(query: string, notes: Note[], n: number = 3): Promise<Note[]> {
-    const results: { similarity: number }[] = [];
+    const results = await imageVectorStore.query({ queryText: query.trim() });
     return buildSimilarityResults(results, notes).slice(0, n);
 }
 

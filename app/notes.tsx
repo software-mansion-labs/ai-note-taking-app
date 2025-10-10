@@ -1,4 +1,5 @@
 import { FontAwesome6 } from "@expo/vector-icons";
+import * as ImagePicker from "expo-image-picker";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useState } from "react";
 import {
@@ -18,6 +19,7 @@ import { colors } from "@/constants/theme";
 enum SearchMode {
     None,
     Text,
+    Image,
 }
 
 const NoteList = ({ notes, label, onDeleteNote }: { notes: Note[], label: string, onDeleteNote: (noteId: string) => void }) => {
@@ -64,6 +66,7 @@ export default function Notes() {
 
     const [notes, setNotes] = useState<Note[]>([]);
     const [textSearchNotes, setTextSearchNotes] = useState<Note[]>([]);
+    const [imageSearchNotes, setImageSearchNotes] = useState<Note[]>([]);
 
     const [searchMode, setSearchMode] = useState<SearchMode>(SearchMode.None);
 
@@ -93,11 +96,41 @@ export default function Notes() {
             try {
                 const textResults = await notesService.searchByText(trimmedQuery, notes);
                 setTextSearchNotes(textResults);
+
+                const imageResults = await notesService.searchImagesByText(trimmedQuery, notes);
+                setImageSearchNotes(imageResults);
             } catch (e) {
                 console.error('Failed to search by text', e);
             }
         })();
     };
+
+    const handleImageSearch = async () => {
+        const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+        if (status !== "granted") {
+            Alert.alert("Permission required", "Photo library permission is needed to pick images.");
+            return;
+        }
+        const result = await ImagePicker.launchImageLibraryAsync({
+            mediaTypes: ['images'],
+            selectionLimit: 1,
+            quality: 1,
+        });
+        if (result.canceled) return;
+
+        try {
+            const results = await notesService.searchByImageUri(result.assets[0].uri, notes || []);
+            setImageSearchNotes(results);
+        } catch (e) {
+            console.error('Failed to search by image', e);
+        }
+
+        setSearchMode(SearchMode.Image);
+    }
+
+    const handleImageSearchDone = () => {
+        setSearchMode(SearchMode.None);
+    }
 
     const handleAddNote = async () => {
         try {
@@ -133,9 +166,14 @@ export default function Notes() {
     const scrollViewContent = () => {
         switch (searchMode) {
             case SearchMode.Text:
-                return <NoteList notes={textSearchNotes} label="Text to Text Search Results (Top 3)" onDeleteNote={handleDeleteNote} />
+                return <>
+                    <NoteList notes={textSearchNotes} label="Text to Text Search Results (Top 3)" onDeleteNote={handleDeleteNote} />
+                    <NoteList notes={imageSearchNotes} label="Text to Image Search Results (Top 3)" onDeleteNote={handleDeleteNote} />
+                </>
             case SearchMode.None:
                 return <NoteList notes={notes} label="All Notes" onDeleteNote={handleDeleteNote} />
+            case SearchMode.Image:
+                return <NoteList notes={imageSearchNotes} label="Image to Image Search Results (Top 3)" onDeleteNote={handleDeleteNote} />
             default:
                 return null;
         }
@@ -150,6 +188,12 @@ export default function Notes() {
                     style={styles.searchInput}
                     placeholderTextColor={colors.textSecondary}
                 />
+                <TouchableOpacity
+                    onPress={searchMode === SearchMode.Image ? handleImageSearchDone : handleImageSearch}
+                    style={styles.imageButton}
+                >
+                    <FontAwesome6 name={searchMode === SearchMode.Image ? "xmark" : "image"} size={20} color={colors.textSecondary} />
+                </TouchableOpacity>
             </View>
             <ScrollView contentContainerStyle={styles.scrollView}>
                 {scrollViewContent()}
@@ -182,6 +226,15 @@ const styles = StyleSheet.create({
         flex: 1,
         borderRadius: 12,
         padding: 12,
+        backgroundColor: colors.surface,
+    },
+    imageButton: {
+        borderRadius: 12,
+        padding: 10,
+        width: 40,
+        height: 40,
+        justifyContent: "center",
+        alignItems: "center",
         backgroundColor: colors.surface,
     },
     scrollView: {
