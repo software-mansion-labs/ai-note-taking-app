@@ -7,6 +7,7 @@ import {
     getNotes as storageGetNotes,
     updateNote as storageUpdateNote,
 } from "@/services/storage/notes";
+import { textSplitter, noteToString, textVectorStore } from "@/services/vectorStores/textVectorStore";
 
 async function addImageToNote(noteId: string, sourceUri: string): Promise<string> {
     const fileName = sourceUri.split("/").pop() ?? "";
@@ -30,20 +31,32 @@ async function getNote(noteId: string): Promise<Note> {
 
 async function createNote(title: string, content: string, imageUris: string[]): Promise<Note> {
     const note = await storageCreateNote({ title, content, imageUris });
+    const chunks = await textSplitter.splitText(noteToString(note));
+    for (const chunk of chunks) {
+        await textVectorStore.add({ document: chunk, metadata: { noteId: note.id } });
+    }
     return note;
 }
 
 async function updateNote(noteId: string, data: { title: string; content: string; imageUris: string[] }): Promise<void> {
     await storageUpdateNote(noteId, data);
+
+    await textVectorStore.delete({ predicate: r => r.metadata?.noteId === noteId });
+
+    const chunks = await textSplitter.splitText(noteToString(data));
+    for (const chunk of chunks) {
+        await textVectorStore.add({ document: chunk, metadata: { noteId } });
+    }
 }
 
 async function deleteNote(noteId: string): Promise<void> {
     await FileSystem.deleteAsync(FileSystem.documentDirectory + `notes/${noteId}`, { idempotent: true });
     await storageDeleteNote(noteId);
+    await textVectorStore.delete({ predicate: r => r.metadata?.noteId === noteId });
 }
 
 async function searchByText(query: string, notes: Note[], n: number = 3): Promise<Note[]> {
-    const results: { similarity: number }[] = [];
+    const results = await textVectorStore.query({ queryText: query.trim() });
     return buildSimilarityResults(results, notes).slice(0, n);
 }
 

@@ -6,6 +6,7 @@ import {
     Image,
     StyleSheet,
     Text,
+    TextInput,
     TouchableOpacity,
     View,
     ScrollView
@@ -13,6 +14,11 @@ import {
 import { notesService } from "@/services/notesService";
 import type { Note } from "@/types/note";
 import { colors } from "@/constants/theme";
+
+enum SearchMode {
+    None,
+    Text,
+}
 
 const NoteList = ({ notes, label, onDeleteNote }: { notes: Note[], label: string, onDeleteNote: (noteId: string) => void }) => {
     const router = useRouter();
@@ -57,6 +63,9 @@ export default function Notes() {
     const router = useRouter();
 
     const [notes, setNotes] = useState<Note[]>([]);
+    const [textSearchNotes, setTextSearchNotes] = useState<Note[]>([]);
+
+    const [searchMode, setSearchMode] = useState<SearchMode>(SearchMode.None);
 
     useFocusEffect(
         useCallback(() => {
@@ -70,6 +79,25 @@ export default function Notes() {
             })();
         }, [])
     );
+
+    const handleSearch = (query: string) => {
+        const trimmedQuery = query.trim();
+        if (trimmedQuery.length === 0) {
+            setSearchMode(SearchMode.None);
+            return;
+        }
+
+        if (trimmedQuery.length > 0) setSearchMode(SearchMode.Text);
+
+        (async () => {
+            try {
+                const textResults = await notesService.searchByText(trimmedQuery, notes);
+                setTextSearchNotes(textResults);
+            } catch (e) {
+                console.error('Failed to search by text', e);
+            }
+        })();
+    };
 
     const handleAddNote = async () => {
         try {
@@ -102,10 +130,29 @@ export default function Notes() {
         );
     };
 
+    const scrollViewContent = () => {
+        switch (searchMode) {
+            case SearchMode.Text:
+                return <NoteList notes={textSearchNotes} label="Text to Text Search Results (Top 3)" onDeleteNote={handleDeleteNote} />
+            case SearchMode.None:
+                return <NoteList notes={notes} label="All Notes" onDeleteNote={handleDeleteNote} />
+            default:
+                return null;
+        }
+    }
+
     return (
         <View style={styles.container}>
+            <View style={styles.searchRow}>
+                <TextInput
+                    placeholder="Search notes"
+                    onChangeText={handleSearch}
+                    style={styles.searchInput}
+                    placeholderTextColor={colors.textSecondary}
+                />
+            </View>
             <ScrollView contentContainerStyle={styles.scrollView}>
-                <NoteList notes={notes} label="All Notes" onDeleteNote={handleDeleteNote} />
+                {scrollViewContent()}
             </ScrollView>
             <TouchableOpacity onPress={handleAddNote} style={styles.fab}>
                 <FontAwesome6 name="plus" size={24} color={colors.fabIcon} />
@@ -126,6 +173,16 @@ const styles = StyleSheet.create({
         padding: 12,
         backgroundColor: colors.background,
         gap: 12,
+    },
+    searchRow: {
+        flexDirection: "row",
+        gap: 8,
+    },
+    searchInput: {
+        flex: 1,
+        borderRadius: 12,
+        padding: 12,
+        backgroundColor: colors.surface,
     },
     scrollView: {
         gap: 16,

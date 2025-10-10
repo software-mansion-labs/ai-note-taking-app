@@ -12,7 +12,10 @@
   },
   "dependencies": {
     "@expo/vector-icons": "^14.1.0",
+    "@op-engineering/op-sqlite": "^15.0.6",
     "@react-native-async-storage/async-storage": "2.1.2",
+    "@react-native-rag/executorch": "^0.2.0",
+    "@react-native-rag/op-sqlite": "^0.2.0",
     "@react-navigation/bottom-tabs": "^7.3.10",
     "@react-navigation/elements": "^2.3.8",
     "@react-navigation/native": "^7.1.6",
@@ -35,8 +38,10 @@
     "react": "19.0.0",
     "react-dom": "19.0.0",
     "react-native": "0.79.6",
+    "react-native-executorch": "^0.5.10",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-keyboard-controller": "^1.18.6",
+    "react-native-rag": "^0.2.0",
     "react-native-reanimated": "~3.17.4",
     "react-native-safe-area-context": "5.4.0",
     "react-native-screens": "~4.11.1",
@@ -50,5 +55,9 @@
     "eslint-config-expo": "~9.2.0",
     "typescript": "~5.8.3"
   },
-  "private": true
+  "private": true,
+  "op-sqlite": {
+    "libsql": true,
+    "sqliteVec": true
+  }
 }
