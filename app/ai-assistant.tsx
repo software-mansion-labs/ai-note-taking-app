@@ -1,13 +1,32 @@
-import { Feather, FontAwesome6 } from "@expo/vector-icons";
+import { Feather, FontAwesome6, MaterialIcons } from "@expo/vector-icons";
 import React, { useEffect, useState } from "react";
 import { StyleSheet, Text, TextInput, TouchableOpacity, View, ScrollView } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { KeyboardAvoidingView } from "react-native-keyboard-controller";
 import { colors } from "@/constants/theme";
-import { LLAMA3_2_1B_SPINQUANT, Message } from "react-native-executorch";
+import { LLAMA3_2_1B_SPINQUANT, Message, SpeechToTextModule, WHISPER_TINY_EN } from "react-native-executorch";
 import { QueryResult, RAG } from "react-native-rag";
 import { ExecuTorchLLM } from "@react-native-rag/executorch";
 import { textVectorStore } from "@/services/vectorStores/textVectorStore";
+import { AudioManager, AudioRecorder } from "react-native-audio-api";
+
+
+const speechToTextModule = new SpeechToTextModule();
+
+// React Native Audio API setup
+const recorder = new AudioRecorder({
+    sampleRate: 16000,
+    bufferLengthInSamples: 1600,
+});
+AudioManager.setAudioSessionOptions({
+    iosCategory: 'playAndRecord',
+    iosMode: 'spokenAudio',
+    iosOptions: ['allowBluetooth', 'defaultToSpeaker'],
+});
+AudioManager.requestRecordingPermissions();
+recorder.onAudioReady(({ buffer }) => {
+    speechToTextModule.streamInsert(buffer.getChannelData(0));
+});
 
 const rag = new RAG({
     vectorStore: textVectorStore,
@@ -49,11 +68,16 @@ export default function AIAssistant() {
     const [ragIsGenerating, setRagIsGenerating] = useState(false);
     const [ragResponse, setRagResponse] = useState("");
 
+    const [isTranscribing, setIsTranscribing] = useState(false);
+
     useEffect(() => {
         if (ragIsReady) return;
 
         (async () => {
             try {
+                await speechToTextModule.load(WHISPER_TINY_EN, (progress) => {
+                    console.log("Whisper model loading progress:", progress);
+                });
                 await rag.load();
                 setRagIsReady(true);
             } catch (e) {
@@ -100,6 +124,33 @@ export default function AIAssistant() {
         setRagResponse("");
     };
 
+    const handleStartTranscribing = async () => {
+        if (!ragIsReady || ragIsGenerating || isTranscribing) return;
+        setIsTranscribing(true);
+        setInputValue("");
+
+        try {
+            recorder.start();
+
+            let committedTranscription = "";
+            for await (const { committed, nonCommitted } of speechToTextModule.stream()) {
+                committedTranscription += committed;
+                setInputValue(committedTranscription + nonCommitted);
+            }
+        } catch (e) {
+            console.error('Transcription failed', e);
+        }
+
+        setIsTranscribing(false);
+    };
+
+    const handleStopTranscribing = () => {
+        if (!isTranscribing) return;
+        recorder.stop();
+        speechToTextModule.streamStop();
+        setIsTranscribing(false);
+    };
+
     if (!ragIsReady) {
         return (
             <SafeAreaView style={styles.loadingContainer}>
@@ -135,6 +186,17 @@ export default function AIAssistant() {
                         placeholderTextColor={colors.textSecondary}
                         style={styles.textInput}
                     />
+                    <View style={styles.sendButtonWrapper}>
+                        {isTranscribing ? (
+                            <TouchableOpacity onPress={handleStopTranscribing} style={styles.sendButton} disabled={ragIsGenerating}>
+                                <FontAwesome6 name="circle-stop" size={24} />
+                            </TouchableOpacity>
+                        ) : (
+                            <TouchableOpacity onPress={handleStartTranscribing} style={styles.sendButton} disabled={ragIsGenerating}>
+                                <MaterialIcons name="multitrack-audio" size={24} />
+                            </TouchableOpacity>
+                        )}
+                    </View>
                     <View style={styles.sendButtonWrapper}>
                         {ragIsGenerating ? (
                             <TouchableOpacity onPress={handleStopGenerating} style={styles.sendButton} disabled={ragIsGenerating}>
