@@ -1,15 +1,8 @@
 import { ExecuTorchEmbeddings } from '@react-native-rag/executorch';
 import { OPSQLiteVectorStore } from '@react-native-rag/op-sqlite';
-import {
-    CLIP_VIT_BASE_PATCH32_IMAGE,
-    CLIP_VIT_BASE_PATCH32_TEXT,
-    ImageEmbeddingsModule,
-} from "react-native-executorch";
+import { CLIP_VIT_BASE_PATCH32_TEXT, ImageEmbeddingsModule } from "react-native-executorch";
 
 const imageEmbeddings = new ImageEmbeddingsModule();
-imageEmbeddings.load(CLIP_VIT_BASE_PATCH32_IMAGE, (progress) => {
-    console.log("CLIP Image model loading progress:", progress);
-});
 export { imageEmbeddings };
 
 export const imageVectorStore = new OPSQLiteVectorStore({
