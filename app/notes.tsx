@@ -80,7 +80,7 @@ export default function Notes() {
         }, [])
     );
 
-    const handleSearch = (query: string) => {
+    const handleSearch = async (query: string) => {
         const trimmedQuery = query.trim();
         if (trimmedQuery.length === 0) {
             setSearchMode(SearchMode.None);
@@ -89,14 +89,12 @@ export default function Notes() {
 
         if (trimmedQuery.length > 0) setSearchMode(SearchMode.Text);
 
-        (async () => {
-            try {
-                const textResults = await notesService.searchByText(trimmedQuery, notes);
-                setTextSearchNotes(textResults);
-            } catch (e) {
-                console.error('Failed to search by text', e);
-            }
-        })();
+        try {
+            const textResults = await notesService.searchByText(trimmedQuery, notes);
+            setTextSearchNotes(textResults);
+        } catch (e) {
+            console.error('Failed to search by text', e);
+        }
     };
 
     const handleAddNote = async () => {
