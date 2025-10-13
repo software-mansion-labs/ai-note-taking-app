@@ -36,6 +36,10 @@ async function createNote(title: string, content: string, imageUris: string[]): 
     for (const chunk of chunks) {
         await textVectorStore.add({ document: chunk, metadata: { noteId: note.id } });
     }
+    for (const uri of imageUris) {
+        const embedding = Array.from(await imageEmbeddings.forward(uri));
+        await imageVectorStore.add({ embedding, metadata: { imageUri: uri, noteId: note.id } });
+    }
     return note;
 }
 
