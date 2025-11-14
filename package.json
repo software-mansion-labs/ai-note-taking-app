@@ -39,7 +39,7 @@
     "react-dom": "19.0.0",
     "react-native": "0.79.6",
     "react-native-audio-api": "^0.10.1",
-    "react-native-executorch": "^0.5.10",
+    "react-native-executorch": "^0.5.15",
     "react-native-gesture-handler": "~2.24.0",
     "react-native-keyboard-controller": "^1.18.6",
     "react-native-rag": "^0.2.0",

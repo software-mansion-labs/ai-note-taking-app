@@ -5621,10 +5621,10 @@ react-native-edge-to-edge@1.6.0:
   resolved "https://registry.yarnpkg.com/react-native-edge-to-edge/-/react-native-edge-to-edge-1.6.0.tgz#2ba63b941704a7f713e298185c26cde4d9e4b973"
   integrity sha512-2WCNdE3Qd6Fwg9+4BpbATUxCLcouF6YRY7K+J36KJ4l3y+tWN6XCqAC4DuoGblAAbb2sLkhEDp4FOlbOIot2Og==
 
-react-native-executorch@^0.5.10:
-  version "0.5.10"
-  resolved "https://registry.yarnpkg.com/react-native-executorch/-/react-native-executorch-0.5.10.tgz#927c7593b4e37fe577fc2ef80d62b7948be746c8"
-  integrity sha512-0F3SqChtnazP66JNTySGsq6MZVoxmI0fxhlg4OGLEOWg0hxKbtbC7Ck458oiKJVI6u35tLbP/4SryekDIq6EoA==
+react-native-executorch@^0.5.15:
+  version "0.5.15"
+  resolved "https://registry.yarnpkg.com/react-native-executorch/-/react-native-executorch-0.5.15.tgz#bc4095d40b1a3562db1e8440d30018bc008452b4"
+  integrity sha512-QypTQIvtArexiwL/YIDtxy9Sp8iEvsD+gUGGhGq5X3hjjRUOBqkGBK7bRRrB1BH4twqTBNxa23mntEmpUe27Eg==
   dependencies:
     "@huggingface/jinja" "^0.5.0"
     expo "^53.0.7"
